@@ -1,4 +1,4 @@
-name: Download, Install, and Push LibreOffice Binary
+name: Extract and Push LibreOffice Standalone
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
-  download_install_push:
+  extract_and_push:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,58 +16,37 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y wget tar dpkg
+      - name: Install dpkg
+        run: sudo apt update && sudo apt install -y dpkg
 
-      - name: Get Latest LibreOffice Version
+      - name: Extract LibreOffice from DEBS
         run: |
-          LATEST_VERSION=$(wget -qO- "https://download.documentfoundation.org/libreoffice/stable/" | grep -oP 'href="\K[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1)
-          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          mkdir -p libreoffice-extracted
+          for file in libreoffice/DEBS/*.deb; do
+            dpkg-deb -x "$file" libreoffice-extracted/
+          done
 
-      - name: Download LibreOffice Binary
+      - name: Verify Extraction
         run: |
-          wget "https://download.documentfoundation.org/libreoffice/stable/${{ env.LATEST_VERSION }}/deb/x86_64/LibreOffice_${{ env.LATEST_VERSION }}_Linux_x86-64_deb.tar.gz" -O libreoffice.tar.gz
-
-      - name: Extract LibreOffice
-        run: |
-          mkdir -p libreoffice
-          tar -xvzf libreoffice.tar.gz -C libreoffice --strip-components=1
-
-      - name: Install LibreOffice from DEBS
-        run: |
-          sudo dpkg -i libreoffice/DEBS/*.deb
-          sudo apt-get install -f -y
+          ls -l libreoffice-extracted/ || echo "Extraction failed or folder is empty."
 
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
 
-      - name: Commit and Push LibreOffice Binary Files
-        run: |
-          for file in libreoffice/DEBS/*.deb; do
-            if [ -f "$file" ]; then
-              git add "$file"
-              
-              # Check if there are changes after adding the file
-              if git diff --cached --quiet; then
-                echo "No changes for $file. Skipping commit."
-                continue
-              fi
-
-              git commit -m "Added LibreOffice binary file: $(basename "$file")"
-              git push origin main
-            fi
-          done
-
       - name: Commit and Push Extracted LibreOffice
         run: |
-          git add libreoffice-extracted/
-          
-          if git diff --cached --quiet; then
-            echo "No changes to commit. Exiting..."
-            exit 0
-          fi
+          if [ -d "libreoffice-extracted" ] && [ "$(ls -A libreoffice-extracted)" ]; then
+            git add libreoffice-extracted/
+            
+            if git diff --cached --quiet; then
+              echo "No changes to commit. Exiting..."
+              exit 0
+            fi
 
-          git commit -m "Extracted LibreOffice for standalone use"
-          git push origin main
+            git commit -m "Extracted LibreOffice for standalone use"
+            git push origin main
+          else
+            echo "No extracted files found. Skipping commit."
+          fi
