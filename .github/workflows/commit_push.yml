@@ -38,9 +38,6 @@ jobs:
           sudo dpkg -i libreoffice/DEBS/*.deb
           sudo apt-get install -f -y
 
-      - name: Verify LibreOffice Installation
-        run: libreoffice --version
-
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
