@@ -30,7 +30,7 @@ jobs:
 
       - name: Extract LibreOffice
         run: |
-          mkdir libreoffice
+          mkdir -p libreoffice
           tar -xvzf libreoffice.tar.gz -C libreoffice --strip-components=1
 
       - name: Configure Git
