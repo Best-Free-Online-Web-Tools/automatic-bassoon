@@ -39,9 +39,20 @@ jobs:
           git config --global user.email "github-actions@github.com"
       - name: Commit and Push LibreOffice Binary Files
         run: |
+      - name: Commit and Push LibreOffice Binary Files
+        run: |
           for file in libreoffice/DEBS/*.deb; do
-            git add "$file"
-            git commit -m "Added LibreOffice binary file: $(basename "$file")"
-            git push origin main
+            if [ -f "$file" ]; then
+              git add "$file"
+              
+              # Check if there are changes after adding the file
+              if git diff --cached --quiet; then
+                echo "No changes for $file. Skipping commit."
+                continue
+              fi
+
+              git commit -m "Added LibreOffice binary file: $(basename "$file")"
+              git push origin main
+            fi
           done
 
