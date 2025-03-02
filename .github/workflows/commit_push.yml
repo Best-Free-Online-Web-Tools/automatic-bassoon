@@ -37,9 +37,11 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-
-      - name: Commit and Push LibreOffice Binary
+      - name: Commit and Push LibreOffice Binary Files
         run: |
-          git add libreoffice/
-          git commit -m "Added LibreOffice ${{ env.LATEST_VERSION }} binary files"
-          git push origin main
+          for file in libreoffice/DEBS/*.deb; do
+            git add "$file"
+            git commit -m "Added LibreOffice binary file: $(basename "$file")"
+            git push origin main
+          done
+
