@@ -17,11 +17,16 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
 
       - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y wget tar
+        run: sudo apt update && sudo apt install -y wget tar dpkg
+
+      - name: Get Latest LibreOffice Version
+        run: |
+          LATEST_VERSION=$(wget -qO- "https://download.documentfoundation.org/libreoffice/stable/" | grep -oP 'href="\K[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1)
+          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
       - name: Download LibreOffice Binary
         run: |
-          wget https://download.documentfoundation.org/libreoffice/stable/7.6.3/deb/x86_64/LibreOffice_7.6.3_Linux_x86-64_deb.tar.gz -O libreoffice.tar.gz
+          wget "https://download.documentfoundation.org/libreoffice/stable/${{ env.LATEST_VERSION }}/deb/x86_64/LibreOffice_${{ env.LATEST_VERSION }}_Linux_x86-64_deb.tar.gz" -O libreoffice.tar.gz
 
       - name: Extract LibreOffice
         run: |
@@ -36,5 +41,5 @@ jobs:
       - name: Commit and Push LibreOffice Binary
         run: |
           git add libreoffice/
-          git commit -m "Added LibreOffice binary files"
+          git commit -m "Added LibreOffice ${{ env.LATEST_VERSION }} binary files"
           git push origin main
