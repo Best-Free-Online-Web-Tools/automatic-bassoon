@@ -1,4 +1,4 @@
-name: Download and Push LibreOffice Binary
+name: Download, Install, and Push LibreOffice Binary
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
-  download_and_push:
+  download_install_push:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,12 +33,19 @@ jobs:
           mkdir -p libreoffice
           tar -xvzf libreoffice.tar.gz -C libreoffice --strip-components=1
 
+      - name: Install LibreOffice from DEBS
+        run: |
+          sudo dpkg -i libreoffice/DEBS/*.deb
+          sudo apt-get install -f -y
+
+      - name: Verify LibreOffice Installation
+        run: libreoffice --version
+
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-      - name: Commit and Push LibreOffice Binary Files
-        run: |
+
       - name: Commit and Push LibreOffice Binary Files
         run: |
           for file in libreoffice/DEBS/*.deb; do
@@ -55,4 +62,3 @@ jobs:
               git push origin main
             fi
           done
-
